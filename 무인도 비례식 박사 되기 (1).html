@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>무인도 비례식 박사 되기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--sky:#bfe9f7;--sky2:#e9f8ee;--card:#fffdf4;--ink:#4a3b2a;--sub:#7a6a55;--green:#6cc17a;--green-d:#3f9a53;--yellow:#ffd25e;--red:#ee7b6b;--line:#e8dcc0;--chip:#fff3cf;--tag:#d9efff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--sky:#1c3a4a;--sky2:#1d3326;--card:#2b2a22;--ink:#f4ead2;--sub:#c8bb9f;--line:#4a4636;--chip:#3b3722;--tag:#24445a}}
+:root[data-theme="dark"]{color-scheme:dark;--sky:#1c3a4a;--sky2:#1d3326;--card:#2b2a22;--ink:#f4ead2;--sub:#c8bb9f;--line:#4a4636;--chip:#3b3722;--tag:#24445a}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Jua","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);background:linear-gradient(var(--sky),var(--sky2));min-height:100vh;display:flex;justify-content:center;padding:16px}
+#app{width:100%;max-width:680px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.title{font-size:20px}
+.bag{background:var(--chip);border:2px solid var(--line);border-radius:999px;padding:4px 14px;font-size:16px}
+.path{display:flex;gap:6px;margin-bottom:12px}
+.node{flex:1;text-align:center;padding:6px 2px;border-radius:14px;background:var(--card);border:2px solid var(--line);font-size:12px;color:var(--sub);line-height:1.3}
+.node.on{background:var(--yellow);color:#4a3b2a;border-color:#e0aa2a}
+.node.done{background:var(--green);color:#fff;border-color:var(--green-d)}
+.card{background:var(--card);border:3px solid var(--line);border-radius:24px;padding:20px;box-shadow:0 6px 0 var(--line)}
+.stage-h{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.big{font-size:44px;line-height:1}
+.stage-t{font-size:20px}
+.stage-s{font-size:14px;color:var(--sub)}
+.tag{display:inline-block;background:var(--tag);border-radius:999px;padding:2px 10px;font-size:13px;margin-top:10px}
+.q{font-size:20px;line-height:1.6;margin:8px 0 14px;min-height:80px}
+.eq{display:inline-block;background:var(--chip);border-radius:12px;padding:2px 10px;font-size:22px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt,.btn{font-family:inherit;font-size:18px;color:var(--ink);background:var(--card);border:3px solid var(--line);border-radius:16px;padding:12px;cursor:pointer;box-shadow:0 4px 0 var(--line);transition:transform .08s}
+.opt:active,.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.opt.ok{background:var(--green);color:#fff;border-color:var(--green-d)}
+.opt.no{background:var(--red);color:#fff;border-color:#c25444}
+.ans{display:flex;gap:8px;align-items:center}
+.ans input{flex:1;font-family:inherit;font-size:22px;padding:10px 14px;border-radius:14px;border:3px solid var(--line);background:var(--card);color:var(--ink);min-width:0}
+.unit{font-size:18px}
+.btn.go{background:var(--green);color:#fff;border-color:var(--green-d);box-shadow:0 4px 0 var(--green-d)}
+.row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.msg{margin-top:14px;padding:12px 14px;border-radius:16px;font-size:16px;line-height:1.6;display:none}
+.msg.show{display:block}
+.msg.good{background:var(--green);color:#fff}
+.msg.bad{background:var(--red);color:#fff}
+.msg.hint{background:var(--chip);color:var(--ink);border:2px dashed var(--line)}
+.dots{display:flex;gap:6px;margin-top:4px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--line)}
+.dot.on{background:var(--yellow)}.dot.done{background:var(--green)}
+.center{text-align:center}
+.stars{font-size:38px;margin:8px 0}
+.ladder{text-align:left;margin:12px auto;max-width:360px;font-size:15px;line-height:1.9}
+.ladder div.cur{background:var(--chip);border-radius:10px;padding:0 8px}
+.shake{animation:sh .3s}
+@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pop{animation:pp .4s}
+@keyframes pp{0%{transform:scale(.8)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+small{color:var(--sub)}
+@media (max-width:420px){.opts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top"><div class="title">🏝️ 비례식 박사 되기</div><div class="bag">👛 <span id="score">0</span>점</div></div>
+  <div class="path" id="path"></div>
+  <div class="card" id="card"></div>
+</div>
+<script>
+var RANKS=["🌱 견습 주민","📖 조수 박사","🍪 연구원","👑 비례식 박사님"];
+var STAGES=[
+{emoji:"🌱",name:"1단계 · 견습 주민",goal:"비례식을 세우고 풀어 보기",sub:"반죽 비율로 비례식의 기본기를 다져요",qs:[
+ {tag:"📷 익힘 문제 ①-(1)",q:"🥣 밀가루와 물을 <b>5 : 4</b>로 섞어 반죽을 만들어요. 밀가루를 15컵 넣을 때 필요한 물의 양을 □컵이라 할 때, 알맞은 비례식은?",o:["5 : 4 = □ : 15","4 : 5 = 15 : □","5 : 4 = 15 : □","5 : 15 = □ : 4"],a:2,h:"밀가루:물 = 5:4 이므로 밀가루 15컵:물 □컵과 비교해요.",e:"(밀가루):(물)의 순서를 맞춰 5 : 4 = 15 : □ 로 세워요."},
+ {tag:"📷 익힘 문제 ①-(2)",q:"🥣 밀가루와 물을 <b>5 : 4</b>로 섞어 반죽을 만들어요. 밀가루를 15컵 넣을 때 필요한 물의 양을 □컵이라 하면 <span class='eq'>5 : 4 = 15 : □</span> 입니다. 넣어야 하는 물은 몇 컵일까요?",a:12,u:"컵",h:"5×□ = 4×15",e:"5×□=60이므로 □=12컵이에요. (5:4 = 15:12)"},
+ ]},
+{emoji:"📖",name:"2단계 · 조수 박사",goal:"도형 속 비율에 비례식 활용하기",sub:"동화책 크기로 비례식을 연습해요",qs:[
+ {tag:"📷 익힘 문제 ②",q:"📚 가로와 세로의 비가 <b>5 : 7</b>인 직사각형 모양 동화책이 있어요. 세로가 28 cm일 때 가로를 □ cm라 하면 알맞은 비례식은?",o:["5 : 7 = 28 : □","5 : 7 = □ : 28","7 : 5 = □ : 28","5 : 28 = 7 : □"],a:1,h:"(가로):(세로) 순서를 맞춰요.",e:"5 : 7 = □ : 28 입니다."},
+ {tag:"📷 익힘 문제 ②",q:"📚 가로와 세로의 비가 <b>5 : 7</b>인 직사각형 모양 동화책이 있어요. 세로가 28 cm일 때 가로를 □ cm라 하면 <span class='eq'>5 : 7 = □ : 28</span> 입니다. 이 동화책의 가로는 몇 cm일까요?",a:20,u:"cm",h:"7×□ = 5×28",e:"7×□=140이므로 □=20cm예요."},
+ ]},
+{emoji:"🍪",name:"3단계 · 연구원",goal:"가격·수량 문제를 비례식으로 해결하기",sub:"쿠키 가게 가격표로 실력을 키워요",qs:[
+ {tag:"📷 익힘 문제 ③",q:"🛍️ 과자 8봉지를 6800원에 팔고 있어요. 같은 과자 12봉지의 값을 □원이라 할 때, 알맞은 비례식은?",o:["8 : 6800 = □ : 12","6800 : 8 = 12 : □","8 : 12 = □ : 6800","8 : 6800 = 12 : □"],a:3,h:"(봉지 수):(가격) 순서를 맞춰요.",e:"8 : 6800 = 12 : □ 입니다."},
+ {tag:"📷 익힘 문제 ③",q:"🛍️ 과자 8봉지를 6800원에 팔고 있어요. 같은 과자 12봉지의 값을 □원이라 하면 <span class='eq'>8 : 6800 = 12 : □</span> 입니다. 과자 12봉지의 값은 얼마일까요?",a:10200,u:"원",h:"8×□ = 6800×12",e:"8×□=81600이므로 □=10200원이에요."},
+ {tag:"🔥 도전",q:"🛍️ 과자 8봉지를 6800원에 팔고 있어요. 같은 과자 12봉지의 값은 <span class='eq'>8 : 6800 = 12 : 10200</span>으로 10200원이에요. 같은 과자를 <b>15300원</b>으로 사면 몇 봉지를 살 수 있을까요?",a:18,u:"봉지",h:"8 : 6800 = □ : 15300",e:"6800×□=8×15300=122400, □=18봉지예요."},
+ ]},
+{emoji:"👑",name:"4단계 · 비례식 박사님",goal:"모든 방법을 총동원해 마지막 시험 통과!",sub:"늦어지는 시계 미스터리를 풀어요",qs:[
+ {tag:"📷 익힘 문제 ④",q:"⏰ 6시간에 <b>18분씩</b> 늦어지는 시계가 있어요. 이 시계가 27분 늦어지는 데 걸리는 시간을 □시간이라 할 때, 알맞은 비례식은?",o:["6 : 18 = 27 : □","18 : 6 = □ : 27","6 : 18 = □ : 27","6 : 27 = □ : 18"],a:2,h:"(시간):(늦어진 분) 순서를 맞춰요.",e:"6 : 18 = □ : 27 입니다."},
+ {tag:"📷 익힘 문제 ④ · 두 가지 방법",q:"⏰ 6시간에 <b>18분씩</b> 늦어지는 시계가 있어요. 이 시계가 27분 늦어지는 데 걸리는 시간을 □시간이라 하면 <span class='eq'>6 : 18 = □ : 27</span> 입니다. 27분 늦어지는 데 걸리는 시간은 몇 시간일까요?",a:9,u:"시간",h:"방법 ① 6:18 = 1:3 → 27을 3으로 나누기 / 방법 ② 6×27 = 18×□",e:"방법 ①(비의 성질): 6:18=1:3이므로 □=27÷3=9. 방법 ②(비례식의 성질): 6×27=18×□ → □=9시간이에요."},
+ {tag:"🔥 도전",q:"⏰ 6시간에 <b>18분씩</b> 늦어지는 시계가 있어요. 이 시계가 27분 늦어지는 데 걸리는 시간은 <span class='eq'>6 : 18 = 9 : 27</span>로 9시간이에요. 이 시계를 <b>오전 9시 정각</b>에 맞춰 놓았어요. 실제 시각이 <b>오후 9시</b>가 되었을 때 시계는 오후 8시 몇 분을 가리킬까요?",a:24,u:"분",h:"오전 9시 → 오후 9시는 12시간. 6 : 18 = 12 : □",e:"12시간 동안 늦어진 시간은 6:18 = 12:□ → 36분. 시계는 9시에서 36분 모자란 8시 24분을 가리켜요."},
+ {tag:"👑 박사 최종 시험",q:"⏰ 6시간에 <b>18분씩</b> 늦어지는 시계가 있어요. 이 시계가 27분 늦어지는 데 걸리는 시간은 <span class='eq'>6 : 18 = 9 : 27</span>로 9시간이에요. 이 시계는 실제 60분이 지날 때 <b>57분</b>만 가요. 시계가 <b>19시간</b> 지난 것을 가리킬 때, 실제로는 몇 시간이 지났을까요?",a:20,u:"시간",h:"실제 60분 : 시계 57분 = □시간 : 19시간. 6시간에 18분 → 1시간에 3분 늦어지는 거예요.",e:"60 : 57 = □ : 19 → 57×□=60×19=1140, □=20시간이에요. (20시간×3분=60분 늦어짐 → 시계 19시간)"}]}
+];
+var st=0,qi=0,tries=0,score=0,locked=false,MAX=0;
+STAGES.forEach(function(s){MAX+=s.qs.length*10});
+var $=function(i){return document.getElementById(i)};
+function path(){
+ $("path").innerHTML=STAGES.map(function(s,i){return '<div class="node '+(i<st?'done':i===st?'on':'')+'">'+(i<st?'✅':s.emoji)+'<br>'+RANKS[i].slice(3)+'</div>'}).join("");
+ $("score").textContent=score;
+}
+function ladder(cur){return '<div class="ladder">'+RANKS.map(function(r,i){return '<div class="'+(i===cur?'cur':'')+'">'+(i<cur?'✅ ':i===cur?'👉 ':'🔒 ')+r+'</div>'}).join("")+'</div>'}
+function intro(){
+ path();var s=STAGES[st];
+ $("card").innerHTML='<div class="center pop"><div class="big" style="font-size:72px">'+s.emoji+'</div><div class="stage-t" style="font-size:26px;margin:8px 0">'+s.name+'</div><div class="stage-s">목표: '+s.goal+'</div>'+ladder(st)+'<p>'+s.sub+'<br><small>문제 '+s.qs.length+'개 · 기회 2번 · 한 번에 맞히면 10점, 두 번째는 5점</small></p><button class="btn go" onclick="startStage()">도전! 🚀</button></div>';
+}
+function startStage(){qi=0;ask()}
+function ask(){
+ path();tries=0;locked=false;
+ var s=STAGES[st],q=s.qs[qi];
+ var dots=s.qs.map(function(_,i){return '<div class="dot '+(i<qi?'done':i===qi?'on':'')+'"></div>'}).join("");
+ var body;
+ if(q.o){body='<div class="opts">'+q.o.map(function(t,i){return '<button class="opt" onclick="pick('+i+',this)">'+t+'</button>'}).join("")+'</div>'}
+ else{body='<div class="ans"><input id="in" type="number" inputmode="numeric" placeholder="정답 입력"><span class="unit">'+(q.u||"")+'</span><button class="btn go" onclick="check()">확인</button></div>'}
+ $("card").innerHTML='<div class="stage-h"><div class="big">'+s.emoji+'</div><div><div class="stage-t">'+s.name+'</div><div class="dots">'+dots+'</div></div></div><span class="tag">'+q.tag+'</span><div class="q">'+q.q+'</div>'+body+'<div class="msg" id="msg"></div><div class="row"><button class="btn" onclick="hint()">💡 힌트</button></div>';
+ var i=$("in");if(i){i.focus();i.addEventListener("keydown",function(e){if(e.key==="Enter")check()})}
+}
+function show(c,t){var m=$("msg");m.className="msg show "+c;m.innerHTML=t}
+function hint(){if(!locked)show("hint","💡 "+STAGES[st].qs[qi].h)}
+function result(ok){
+ var q=STAGES[st].qs[qi];
+ if(ok){
+  var p=tries===0?10:5;score+=p;locked=true;$("score").textContent=score;
+  show("good pop","🎉 정답! +"+p+"점<br>"+q.e);next();
+ }else{
+  tries++;
+  if(tries>=2){locked=true;show("bad","😢 아쉬워요! 정답은 <b>"+(q.o?q.o[q.a]:q.a+(q.u||""))+"</b><br>"+q.e);next()}
+  else{show("bad","🤔 다시 한 번 생각해 볼까요? (기회 1번 남음)");var c=$("card");c.classList.remove("shake");void c.offsetWidth;c.classList.add("shake")}
+ }
+}
+function next(){
+ var last=qi===STAGES[st].qs.length-1;
+ var b=document.createElement("button");b.className="btn go";b.textContent=last?(st===3?"박사 증서 받기 🎓":"승급하러 가기 ➡️"):"다음 문제 ➡️";
+ b.onclick=function(){if(!last){qi++;ask()}else if(st===3){end()}else{promote()}};
+ document.querySelector(".row").appendChild(b);
+ document.querySelectorAll(".opt").forEach(function(o){o.disabled=true});
+ var i=$("in");if(i)i.disabled=true;
+}
+function promote(){
+ st++;path();
+ $("card").innerHTML='<div class="center pop"><div class="big" style="font-size:72px">🎊</div><div class="stage-t" style="font-size:24px;margin:8px 0">승급 성공!</div><p>이제 <b>'+RANKS[st]+'</b>이(가) 되었어요!</p>'+ladder(st)+'<button class="btn go" onclick="intro()">다음 단계로 ➡️</button></div>';
+}
+function pick(i,el){
+ if(locked)return;var q=STAGES[st].qs[qi];
+ if(i===q.a){el.classList.add("ok");result(true)}
+ else{el.classList.add("no");el.disabled=true;result(false)}
+}
+function check(){
+ if(locked)return;var v=$("in").value;if(v==="")return;
+ result(Number(v)===STAGES[st].qs[qi].a);
+ if(!locked){$("in").select()}
+}
+function end(){
+ st=4;path();var r=score/MAX;
+ var rank=r>=.9?["🎓","비례식 박사님","박사 학위를 받았어요! 완벽한 실력이에요!"]:r>=.7?["📜","비례식 준박사","박사까지 아주 조금 남았어요!"]:r>=.5?["📖","비례식 조수 박사","핵심만 복습하면 박사가 될 수 있어요!"]:["🌱","견습 주민","오늘 배운 내용을 다시 확인하고 재도전해 봐요!"];
+ var stars=r>=.9?"⭐⭐⭐":r>=.7?"⭐⭐☆":r>=.5?"⭐☆☆":"☆☆☆";
+ $("card").innerHTML='<div class="center pop"><div class="big" style="font-size:72px">'+rank[0]+'</div><div class="stage-t" style="font-size:26px;margin:8px 0">'+rank[1]+'</div><div class="stars">'+stars+'</div><p style="font-size:20px">총 <b>'+score+'</b> / '+MAX+'점</p><p>'+rank[2]+'</p><p><small>오늘의 핵심: 비례식을 세울 때는 <b>같은 종류끼리 같은 순서</b>로!<br>외항의 곱 = 내항의 곱으로 □를 구해요.</small></p><button class="btn go" onclick="restart()">다시 도전 🔁</button></div>';
+}
+function restart(){st=0;qi=0;score=0;intro()}
+intro();
+</script>
+</body>
+</html>
